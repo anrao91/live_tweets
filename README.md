@@ -10,7 +10,7 @@ LiveTweet is a simple django app which retriews tweets of a given hashtag
 ```
 virtualenv venv
 source ./venv/bin/activate
-xargs -a requirements.txt -n 1 pip install
+pip install -r requirements.txt
 ```
 
 * Run the inital migrations
