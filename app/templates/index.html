@@ -1,0 +1,179 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Twitter LiveStream</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+
+    <!-- Custom styles for this template -->
+    <link href="{% static 'css/jumbotron-narrow.css' %}" rel="stylesheet">
+
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    <style>
+        .search-input {
+            border-right: 0;
+            width: 100% !important;
+        }
+
+        .search-icon {
+            border-left:0 solid transparent;
+            background:transparent;
+        }
+        .media {
+            border-radius: 2px;
+            border: 1px solid #bcbcbc;
+            padding: 10px;
+            box-shadow: 1px 1px 1px 0px #777;
+
+        }
+        .media:hover {
+            cursor: pointer !important;
+            background-color: #eee;
+        }
+        .tweet-link{
+            text-decoration: none !important;
+        }
+        .dp {
+            border-radius: 36px;
+        }
+    </style>
+  </head>
+
+  <body>
+
+    <div class="container">
+      <div class="header clearfix">
+        <nav>
+         <!--  <ul class="nav nav-pills pull-right">
+            <li role="presentation" class="active"><a href="#">Home</a></li>
+            <li role="presentation"><a href="#">About</a></li>
+            <li role="presentation"><a href="#">Contact</a></li>
+          </ul> -->
+        </nav>
+        <h2 class="text-muted">Social Stream</h2>
+        <div class="form-group pull-right col-md-4">
+            <label for="autorefresh"> Set Auto refresh time in sec: </label>
+            <input type="number" id="autorefresh" name="autorefresh" class="form-control pull-right col-md-2" />
+            <br><br><br><span><button id="set-time-btn" class="btn col-md-3 pull-right">Set</button></span>
+      </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-12">
+            <form class="form-inline" role="form" id="hashtag_form" action="/get_tweets/">
+              <div class="form-group  input-group-lg col-lg-8">
+                <input type="text" id="hashtag-input" class="form-control search-input input-lg" name="hashtag" placeholder="Enter Hashtag without # , Ex : Brexit ">
+              </div>
+              {% csrf_token %}
+              <div class="form-group col-lg-4">
+              <input type="submit" value="Get Tweet" class="btn btn-primary input-lg" />
+              </div>
+              <br>
+            </form>
+        </div>
+      </div>
+      <br><br>
+     <!-- Empty container for tweets list -->
+      <div class="row marketing">
+      <div id="tweet_list"></div>
+      </div>
+        <div id='ajax_loader' style="position: fixed; left: 50%; top: 50%; display: none;">
+            <img src="https://www.drupal.org/files/issues/ajax-loader.gif"></img>
+        </div>
+      <footer class="footer">
+        <p>&copy; 2016 Anusha Rao.</p>
+      </footer>
+
+
+    </div> <!-- /container -->
+
+
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+        $('#hashtag_form').submit(function(e) {
+            jQuery.event.trigger("ajaxStart");
+            e.preventDefault();
+            $.ajax({
+                type: 'POST',
+                url: $(this).attr('action'),
+                data: $(this).serialize(),
+                xhrFields: {
+                    withCredentials: true
+                },
+                success: function(response) {
+                    $('#tweet_list').html('');
+                    for (var key in response) {
+                      tweet = response[key];
+                      var template = '<div class="media">\
+                            <div class="media-left"> <a href="#"> <img class="media-object dp" data-src="" alt="64x64" src="'+tweet.dp+'" data-holder-rendered="true"style="width: 64px; height: 64px;"> </a> </div>\
+                            <div class="media-body"> <h4 class="media-heading"><a class="tweet-link" href="https://twitter.com/statuses/'+tweet.id+'/" target="_blank">'+tweet.text+'</a></h4>\
+                            '+tweet.created_time+'\
+                            <span class="label label-inf">hello</span>\
+                            </div>\
+                        </div>';
+                        $(template).appendTo('#tweet_list');
+                        jQuery.event.trigger("ajaxStop");
+                    }
+
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                    $('#login_failure').trigger('click');
+                },
+            });
+            return false;
+        });
+
+        setInterval(function(){
+            if ($('#hashtag-input').val()) {
+                $('#hashtag_form').submit();
+            }
+        }, parseInt(window.localStorage.getItem('autorefresh')));
+
+        $('#set-time-btn').click(function(){
+           var timeout = parseInt($('#autorefresh').val()) ;
+           var t = timeout * 1000;
+           window.localStorage.setItem('autorefresh', ""+t);
+           $('#autorefresh').val(timeout);
+           location.reload();
+        });
+        jQuery(function ($){
+            $(document).ajaxStop(function(){
+                $("#ajax_loader").hide();
+             });
+             $(document).ajaxStart(function(){
+                 $("#ajax_loader").show();
+             });
+        });
+        if(window.localStorage.getItem('autorefresh')) {
+            $('#autorefresh').val(parseInt(window.localStorage.getItem('autorefresh') / 1000.0));
+        } else {
+             window.localStorage.setItem('autorefresh', '30000');
+             $('#autorefresh').val(parseInt(window.localStorage.getItem('autorefresh') / 1000.0));
+        }
+    });
+
+
+    </script>
+
+  </body>
+</html>
