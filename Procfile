@@ -1,1 +1,1 @@
-web: gunicorn LiveTweets.wsgi:application --log-file -
+web: python manage.py collectstatic --noinput; bin/gunicorn_django --workers=4 --bind=0.0.0.0:$PORT LiveTweets/settings.py
